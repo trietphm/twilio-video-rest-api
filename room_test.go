@@ -3,13 +3,12 @@ package twilio
 import "testing"
 
 const (
-	apiKey    = "SK7e92aab55f2a7f09af7a14493c2d791c"
-	apiSecret = "re0W7vK4ZNT2tPxetvHY8A86nfTvq6gD"
+	apiKey    = ""
+	apiSecret = ""
 )
 
 func TestGetRoom(t *testing.T) {
 	tw := NewTwilio(apiKey, apiSecret, nil)
-	tw.EnableDebug()
 
 	// Exist room
 	room, err := tw.GetRoom("DailyStandup")
@@ -19,4 +18,53 @@ func TestGetRoom(t *testing.T) {
 	}
 
 	t.Logf("Room: %+v", room)
+}
+
+func TestNotFoundRoom(t *testing.T) {
+	tw := NewTwilio(apiKey, apiSecret, nil)
+
+	// Exist room
+	room, err := tw.GetRoom("THISISNOTFOUNDROOM")
+	if err == nil {
+		t.Errorf("Get not found room failed, room: %v", room)
+		t.Fail()
+	}
+
+	notFoundError, ok := err.(Error)
+	if !ok {
+		t.Errorf("Error is not twilio error: %v", err)
+		t.Fail()
+	}
+
+	if notFoundError.Status != 404 {
+		t.Errorf("Error is not not found: %v", err)
+		t.Fail()
+	}
+
+	t.Logf("Room is not found, err: %v", notFoundError)
+}
+
+func TestAuthorizationError(t *testing.T) {
+	tw := NewTwilio("abcd", "abcd", nil)
+	tw.EnableDebug()
+
+	// Exist room
+	room, err := tw.GetRoom("RANDOM_ROOM")
+	if err == nil {
+		t.Errorf("Get not found room failed, room: %v", room)
+		t.Fail()
+	}
+
+	authError, ok := err.(Error)
+	if !ok {
+		t.Errorf("Error is not twilio error: %v", err)
+		t.Fail()
+	}
+
+	if authError.Status != 401 {
+		t.Errorf("Error is not Authenticate error: %v", err)
+		t.Fail()
+	}
+
+	t.Logf("Authencation fail, err: %v", authError)
 }

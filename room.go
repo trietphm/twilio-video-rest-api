@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"time"
-
-	"github.com/kevinburke/rest"
 )
 
 const (
@@ -73,8 +71,7 @@ var client *http.Client
 
 func init() {
 	client = &http.Client{
-		Timeout:   defaultTimeout,
-		Transport: rest.DefaultTransport,
+		Timeout: defaultTimeout,
 	}
 }
 
@@ -123,11 +120,19 @@ func (t *twilio) GetRoom(roomName string) (room Room, err error) {
 		debug(httputil.DumpResponse(response, true))
 	}
 
-	//TODO handle status
-
 	body, err = ioutil.ReadAll(response.Body)
 	if err != nil {
 		return
+	}
+
+	if response.StatusCode != 200 {
+		var resErr Error
+		err = json.Unmarshal(body, &resErr)
+		if err != nil {
+			return
+		}
+
+		return room, resErr
 	}
 
 	err = json.Unmarshal(body, &room)
