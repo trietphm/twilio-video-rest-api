@@ -151,7 +151,7 @@ func (t *twilio) GetRoom(roomName string) (room Room, err error) {
 		return
 	}
 
-	if response.StatusCode != 200 {
+	if response.StatusCode != 200 && response.StatusCode != 201 && response.StatusCode != 202 {
 		var resErr Error
 		err = json.Unmarshal(body, &resErr)
 		if err != nil {
@@ -201,7 +201,58 @@ func (t *twilio) CreateRoom(param roomParam) (room Room, err error) {
 		return
 	}
 
-	if response.StatusCode != 201 {
+	if response.StatusCode != 200 && response.StatusCode != 201 && response.StatusCode != 202 {
+		var resErr Error
+		err = json.Unmarshal(body, &resErr)
+		if err != nil {
+			return
+		}
+
+		return room, resErr
+	}
+
+	err = json.Unmarshal(body, &room)
+	return
+}
+
+func (t *twilio) CompleteRoom(roomName string) (room Room, err error) {
+	var response *http.Response
+	var request *http.Request
+
+	link := fmt.Sprintf(basePath+"Rooms/%s", roomName)
+	data := url.Values{}
+	data.Set("Status", RoomStatusCompleted)
+	requestBody := strings.NewReader(data.Encode())
+	request, err = http.NewRequest("POST", link, requestBody)
+	if err != nil {
+		return
+	}
+	request.SetBasicAuth(t.ApiKey, t.ApiSecret)
+	request.Header.Add("content-type", "application/x-www-form-urlencoded")
+
+	// Dump request
+	if t.debug {
+		fmt.Println("[DEBUG][RequestBody]")
+		debug(httputil.DumpRequestOut(request, true))
+	}
+
+	response, err = client.Do(request)
+	if err != nil {
+		return
+	}
+	defer response.Body.Close()
+
+	if t.debug {
+		fmt.Println("[DEBUG][ResponseBody]")
+		debug(httputil.DumpResponse(response, true))
+	}
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return
+	}
+
+	if response.StatusCode != 200 && response.StatusCode != 201 && response.StatusCode != 202 {
 		var resErr Error
 		err = json.Unmarshal(body, &resErr)
 		if err != nil {
