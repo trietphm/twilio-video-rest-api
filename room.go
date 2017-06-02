@@ -8,13 +8,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 )
 
 const (
 	basePath = "https://video.twilio.com/v1/"
 
-	RoomTypePeerToPeer = "peer-too-peer"
+	RoomTypePeerToPeer = "peer-to-peer"
 	RoomTypeGroup      = "group"
 
 	RoomStatusInProgrcess = "in-progress"
@@ -34,16 +37,6 @@ type twilio struct {
 	debug     bool
 }
 
-type RoomParam struct {
-	Type                        string
-	EnableTurn                  bool
-	UniqueName                  string
-	StatusCallback              string
-	StatusCallbackMethod        string
-	RecordParticipantsOnConnect string
-	MaxParticipants             int
-}
-
 type Room struct {
 	Sid                         string     `json:"sid"`
 	Status                      string     `json:"status"`
@@ -61,6 +54,40 @@ type Room struct {
 	RecordParticipantsOnConnect bool       `json:"record_participants_on_connect"`
 	Url                         string     `json:"url"`
 	Links                       Link       `json:"links"`
+}
+
+type roomParam struct {
+	Type                        string
+	EnableTurn                  bool
+	UniqueName                  string
+	StatusCallback              string
+	StatusCallbackMethod        string
+	RecordParticipantsOnConnect bool
+	MaxParticipants             int
+}
+
+func NewRoomParam() roomParam {
+	return roomParam{
+		Type:                        "",
+		EnableTurn:                  true,
+		UniqueName:                  "",
+		StatusCallback:              "",
+		StatusCallbackMethod:        "POST",
+		RecordParticipantsOnConnect: false,
+		MaxParticipants:             50,
+	}
+}
+
+func (r roomParam) toURLEncoded() url.Values {
+	data := url.Values{}
+	data.Set("Type", r.Type)
+	data.Set("EnableTurn", strconv.FormatBool(r.EnableTurn))
+	data.Set("UniqueName", r.UniqueName)
+	data.Set("StatusCallback", r.StatusCallback)
+	data.Set("StatusCallbackMethod", r.StatusCallbackMethod)
+	data.Set("RecordParticipantsOnConnect", strconv.FormatBool(r.RecordParticipantsOnConnect))
+	data.Set("MaxParticipants", strconv.Itoa(r.MaxParticipants))
+	return data
 }
 
 type Link struct {
@@ -94,7 +121,6 @@ func (t *twilio) DisableDebug() {
 }
 
 func (t *twilio) GetRoom(roomName string) (room Room, err error) {
-	var body []byte
 	var response *http.Response
 	var request *http.Request
 
@@ -120,12 +146,62 @@ func (t *twilio) GetRoom(roomName string) (room Room, err error) {
 		debug(httputil.DumpResponse(response, true))
 	}
 
-	body, err = ioutil.ReadAll(response.Body)
+	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return
 	}
 
 	if response.StatusCode != 200 {
+		var resErr Error
+		err = json.Unmarshal(body, &resErr)
+		if err != nil {
+			return
+		}
+
+		return room, resErr
+	}
+
+	err = json.Unmarshal(body, &room)
+	return
+}
+
+func (t *twilio) CreateRoom(param roomParam) (room Room, err error) {
+	var response *http.Response
+	var request *http.Request
+
+	url := basePath + "Rooms"
+	data := param.toURLEncoded()
+	requestBody := strings.NewReader(data.Encode())
+	request, err = http.NewRequest("POST", url, requestBody)
+	if err != nil {
+		return
+	}
+	request.SetBasicAuth(t.ApiKey, t.ApiSecret)
+	request.Header.Add("content-type", "application/x-www-form-urlencoded")
+
+	// Dump request
+	if t.debug {
+		fmt.Println("[DEBUG][RequestBody]")
+		debug(httputil.DumpRequestOut(request, true))
+	}
+
+	response, err = client.Do(request)
+	if err != nil {
+		return
+	}
+	defer response.Body.Close()
+
+	if t.debug {
+		fmt.Println("[DEBUG][ResponseBody]")
+		debug(httputil.DumpResponse(response, true))
+	}
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return
+	}
+
+	if response.StatusCode != 201 {
 		var resErr Error
 		err = json.Unmarshal(body, &resErr)
 		if err != nil {

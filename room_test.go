@@ -3,35 +3,104 @@ package twilio
 import "testing"
 
 const (
-	apiKey    = ""
-	apiSecret = ""
+	apiKey    = "SKafd8e830169dedd5a2c8f173bfbe6af3"
+	apiSecret = "TQKlsFeDjY4kGwTFpqbnNXf0tBOl5Kgh"
 )
 
-func TestGetRoom(t *testing.T) {
+func TestCreateRoomSuccess(t *testing.T) {
 	tw := NewTwilio(apiKey, apiSecret, nil)
+	param := roomParam{
+		Type:                        RoomTypePeerToPeer,
+		EnableTurn:                  true,
+		UniqueName:                  "TestRoom",
+		StatusCallback:              "http://twilio.com",
+		StatusCallbackMethod:        "GET",
+		RecordParticipantsOnConnect: false,
+		MaxParticipants:             2,
+	}
 
-	// Exist room
-	room, err := tw.GetRoom("DailyStandup")
+	room, err := tw.CreateRoom(param)
 	if err != nil {
-		t.Errorf("Get exists room failed: %v", err)
+		te, err := ParseTwilioError(err)
+		if err != nil {
+			t.Errorf("Error is not twilio error: %v", err)
+			t.Fail()
+		}
+
+		t.Errorf("Create room failed: %+v", te)
 		t.Fail()
+		return
 	}
 
 	t.Logf("Room: %+v", room)
 }
 
-func TestNotFoundRoom(t *testing.T) {
+func TestCreateRoomFail(t *testing.T) {
+	tw := NewTwilio(apiKey, apiSecret, nil)
+	param := roomParam{
+		Type:                        "invalidType",
+		EnableTurn:                  true,
+		UniqueName:                  "TestRoom",
+		StatusCallback:              "http://twilio.com",
+		StatusCallbackMethod:        "GET",
+		RecordParticipantsOnConnect: false,
+		MaxParticipants:             2,
+	}
+
+	room, err := tw.CreateRoom(param)
+	if err == nil {
+		t.Errorf("Create room success, room: %v", room)
+		t.Fail()
+		return
+	}
+
+	badParam, err := ParseTwilioError(err)
+	if err != nil {
+		t.Errorf("Error is not twilio error: %v", err)
+		t.Fail()
+		return
+	}
+
+	if badParam.Status != 400 {
+		t.Errorf("Error is not bad param: %v", err)
+		t.Fail()
+		return
+	}
+
+	t.Logf("Success error: %+v", err)
+}
+
+func TestGetRoom(t *testing.T) {
 	tw := NewTwilio(apiKey, apiSecret, nil)
 
 	// Exist room
+	room, err := tw.GetRoom("TestRoom")
+	if err != nil {
+		te, err := ParseTwilioError(err)
+		if err != nil {
+			t.Errorf("Error is not twilio error: %v", err)
+			t.Fail()
+		}
+
+		t.Errorf("Create room failed: %v", te)
+		t.Fail()
+		return
+	}
+
+	t.Logf("Room: %+v", room)
+}
+
+func TestGetNotFoundRoom(t *testing.T) {
+	tw := NewTwilio(apiKey, apiSecret, nil)
+
 	room, err := tw.GetRoom("THISISNOTFOUNDROOM")
 	if err == nil {
 		t.Errorf("Get not found room failed, room: %v", room)
 		t.Fail()
 	}
 
-	notFoundError, ok := err.(Error)
-	if !ok {
+	notFoundError, err := ParseTwilioError(err)
+	if err != nil {
 		t.Errorf("Error is not twilio error: %v", err)
 		t.Fail()
 	}
@@ -46,17 +115,15 @@ func TestNotFoundRoom(t *testing.T) {
 
 func TestAuthorizationError(t *testing.T) {
 	tw := NewTwilio("abcd", "abcd", nil)
-	tw.EnableDebug()
 
-	// Exist room
 	room, err := tw.GetRoom("RANDOM_ROOM")
 	if err == nil {
 		t.Errorf("Get not found room failed, room: %v", room)
 		t.Fail()
 	}
 
-	authError, ok := err.(Error)
-	if !ok {
+	authError, err := ParseTwilioError(err)
+	if err != nil {
 		t.Errorf("Error is not twilio error: %v", err)
 		t.Fail()
 	}
