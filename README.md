@@ -1,7 +1,7 @@
 Twilio REST API Tool
 =========
 
-[[![GoDoc](https://godoc.org/github.com/trietphm/twilio-video-rest-api?status.svg)](http://godoc.org/github.com/trietphm/twilio-video-rest-api)![Build Status](https://travis-ci.org/trietphm/twilio-video-rest-api.svg?branch=master)](https://travis-ci.org/trietphm/twilio-video-rest-api)
+[![GoDoc](https://godoc.org/github.com/trietphm/twilio-video-rest-api?status.svg)](http://godoc.org/github.com/trietphm/twilio-video-rest-api) [![Build Status](https://travis-ci.org/trietphm/twilio-video-rest-api.svg?branch=master)](https://travis-ci.org/trietphm/twilio-video-rest-api)
 
 Easier to access to Twilio Programmable Video REST API.
 Twilio Document: https://www.twilio.com/docs/api/video/rest 
