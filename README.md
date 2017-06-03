@@ -19,27 +19,25 @@ First, get your own API key & secrect from [Twilio Console](https://www.twilio.c
 Create new Twilio 
 
 ```
-	// Pass your httpClient or leave it nil, then default http client will be used
-	tw := twilio.NewTwilio(ApiKey, ApiSecret, httpClient) 
+// Pass your httpClient or leave it nil, then default http client will be used
+tw := twilio.NewTwilio(ApiKey, ApiSecret, httpClient) 
 ```
 
 Get a room 
 
 ```
-	room, err := tw.GetRoom("MyRoom")
+room, err := tw.GetRoom("MyRoom")
+if err != nil {
+	panic(err)
+	/* To get original Twilio error, parse it to TwilioError
+	te, err := ParseTwilioError(err)
 	if err != nil {
-		panic(err)
-
-		/* To get original Twilio error, parse it to TwilioError
-
-		te, err := ParseTwilioError(err)
-		if err != nil {
-			panic("Parse twilio error fail")
-		}
-		panic (te)
-		*/
+		panic("Parse twilio error fail")
 	}
-	fmt.Printf("%+v\n", room)
+	panic (te)
+	*/
+}
+fmt.Printf("%+v\n", room)
 ```
 
 ### Debug tool 
@@ -60,9 +58,9 @@ Debug tool will be disable by default
 
 ### Supported
 
-- [x] Create Room 
-- [x] Get Room 
-- [x] Complete Room 
-- [x] Get list Room 
-- [x] Debug tool 
+- [x] Create Room
+- [x] Get Room
+- [x] Complete Room
+- [x] Get list Room
+- [x] Debug tool
 

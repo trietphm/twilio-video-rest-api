@@ -30,7 +30,7 @@ const (
 	defaultTimeout = 30 * time.Second
 )
 
-type twilio struct {
+type Twilio struct {
 	ApiKey    string
 	ApiSecret string
 	debug     bool
@@ -82,25 +82,25 @@ func init() {
 	}
 }
 
-func NewTwilio(apiKey, apiSecret string, c *http.Client) twilio {
+func NewTwilio(apiKey, apiSecret string, c *http.Client) Twilio {
 	if c != nil {
 		client = c
 	}
-	return twilio{
+	return Twilio{
 		ApiKey:    apiKey,
 		ApiSecret: apiSecret,
 	}
 }
 
-func (t *twilio) EnableDebug() {
+func (t *Twilio) EnableDebug() {
 	t.debug = true
 }
 
-func (t *twilio) DisableDebug() {
+func (t *Twilio) DisableDebug() {
 	t.debug = false
 }
 
-func (t *twilio) GetRoom(roomName string) (room Room, err error) {
+func (t *Twilio) GetRoom(roomName string) (room Room, err error) {
 	var response *http.Response
 	var request *http.Request
 
@@ -145,7 +145,7 @@ func (t *twilio) GetRoom(roomName string) (room Room, err error) {
 	return
 }
 
-func (t *twilio) CreateRoom(param roomParam) (room Room, err error) {
+func (t *Twilio) CreateRoom(param roomParam) (room Room, err error) {
 	var response *http.Response
 	var request *http.Request
 
@@ -195,7 +195,7 @@ func (t *twilio) CreateRoom(param roomParam) (room Room, err error) {
 	return
 }
 
-func (t *twilio) CompleteRoom(roomName string) (room Room, err error) {
+func (t *Twilio) CompleteRoom(roomName string) (room Room, err error) {
 	var response *http.Response
 	var request *http.Request
 
@@ -246,7 +246,7 @@ func (t *twilio) CompleteRoom(roomName string) (room Room, err error) {
 	return
 }
 
-func (t *twilio) GetListRooms(param listRoomParam) (listRoom ListRoom, err error) {
+func (t *Twilio) GetListRooms(param listRoomParam) (listRoom ListRoom, err error) {
 	var response *http.Response
 	var request *http.Request
 
