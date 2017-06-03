@@ -3,8 +3,8 @@ package twilio
 import "testing"
 
 const (
-	apiKey    = ""
-	apiSecret = ""
+	apiKey    = "SK46e10c6f25dcfd54e4d00275feb40438"
+	apiSecret = "cAmcg8t7lyG8Ru4LH3ycx7Mg7Yq0HWy6"
 )
 
 func TestCreateRoomSuccess(t *testing.T) {
@@ -155,4 +155,25 @@ func TestCompleteRoom(t *testing.T) {
 	}
 
 	t.Logf("Room completed: %+v", room)
+}
+
+func TestGetListRoom(t *testing.T) {
+	tw := NewTwilio(apiKey, apiSecret, nil)
+	tw.EnableDebug()
+
+	param := NewListRoomParam()
+	rooms, err := tw.GetListRooms(param)
+	if err != nil {
+		te, err := ParseTwilioError(err)
+		if err != nil {
+			t.Errorf("Error is not twilio error: %v", err)
+			t.Fail()
+		}
+
+		t.Errorf("Get list room failed: %v", te)
+		t.Fail()
+		return
+	}
+
+	t.Logf("Rooms: %+v", rooms)
 }

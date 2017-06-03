@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -56,42 +55,23 @@ type Room struct {
 	Links                       Link       `json:"links"`
 }
 
-type roomParam struct {
-	Type                        string
-	EnableTurn                  bool
-	UniqueName                  string
-	StatusCallback              string
-	StatusCallbackMethod        string
-	RecordParticipantsOnConnect bool
-	MaxParticipants             int
-}
-
-func NewRoomParam() roomParam {
-	return roomParam{
-		Type:                        "",
-		EnableTurn:                  true,
-		UniqueName:                  "",
-		StatusCallback:              "",
-		StatusCallbackMethod:        "POST",
-		RecordParticipantsOnConnect: false,
-		MaxParticipants:             50,
-	}
-}
-
-func (r roomParam) toURLEncoded() url.Values {
-	data := url.Values{}
-	data.Set("Type", r.Type)
-	data.Set("EnableTurn", strconv.FormatBool(r.EnableTurn))
-	data.Set("UniqueName", r.UniqueName)
-	data.Set("StatusCallback", r.StatusCallback)
-	data.Set("StatusCallbackMethod", r.StatusCallbackMethod)
-	data.Set("RecordParticipantsOnConnect", strconv.FormatBool(r.RecordParticipantsOnConnect))
-	data.Set("MaxParticipants", strconv.Itoa(r.MaxParticipants))
-	return data
-}
-
 type Link struct {
 	Recordings string `json:"recordings"`
+}
+
+type ListRoom struct {
+	Meta  Meta   `json:"meta"`
+	Rooms []Room `json:"rooms"`
+}
+
+type Meta struct {
+	Page            int     `json:"page"`
+	PageSize        int     `json:"page_size"`
+	FirstPageUrl    string  `json:"first_page_url"`
+	PreviousPageUrl *string `json:"previous_page_url"`
+	Url             string  `json:"url"`
+	NextPageUrl     *string `json:"next_page_url"`
+	Key             string  `json:"key"`
 }
 
 var client *http.Client
@@ -263,6 +243,53 @@ func (t *twilio) CompleteRoom(roomName string) (room Room, err error) {
 	}
 
 	err = json.Unmarshal(body, &room)
+	return
+}
+
+func (t *twilio) GetListRooms(param listRoomParam) (listRoom ListRoom, err error) {
+	var response *http.Response
+	var request *http.Request
+
+	url := basePath + "Rooms"
+	request, err = http.NewRequest("GET", url, nil)
+	if err != nil {
+		return
+	}
+	request.SetBasicAuth(t.ApiKey, t.ApiSecret)
+	queryParam := param.toQueryParam()
+	request.URL.RawQuery = queryParam.Encode()
+
+	// Dump request
+	if t.debug {
+		debug(httputil.DumpRequestOut(request, false))
+	}
+
+	response, err = client.Do(request)
+	if err != nil {
+		return
+	}
+	defer response.Body.Close()
+
+	if t.debug {
+		debug(httputil.DumpResponse(response, true))
+	}
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return
+	}
+
+	if response.StatusCode != 200 && response.StatusCode != 201 && response.StatusCode != 202 {
+		var resErr Error
+		err = json.Unmarshal(body, &resErr)
+		if err != nil {
+			return
+		}
+
+		return listRoom, resErr
+	}
+
+	err = json.Unmarshal(body, &listRoom)
 	return
 }
 
