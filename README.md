@@ -8,7 +8,7 @@ Twilio Document: https://www.twilio.com/docs/api/video/rest
 
 ## Install 
 
-```
+```go
 go get github.com/trietphm/twilio-video-rest-api
 ```
 
@@ -18,14 +18,14 @@ First, get your own API key & secrect from [Twilio Console](https://www.twilio.c
 
 Create new Twilio 
 
-```
+```go
 // Pass your httpClient or leave it nil, then default http client will be used
 tw := twilio.NewTwilio(ApiKey, ApiSecret, httpClient) 
 ```
 
 Get a room 
 
-```
+```go
 room, err := tw.GetRoom("MyRoom")
 if err != nil {
 	panic(err)
@@ -44,13 +44,13 @@ fmt.Printf("%+v\n", room)
 You can log all information of your request/response to Twilio REST api. 
 To enable debug:
 
-```
+```go
 tw.EnableDebug()
 ```
 
 And disable it 
 
-```
+```go
 tw.DisableDebug()
 ```
 
